@@ -6,7 +6,7 @@ OPENWEATHER_API_KEY = "d56b07f5053f9bcf3be82a4df9f6cbf6"
 NEWS_API_KEY = "6eb8d82ad76a4331837ccc182c2fe6ab"
 
 st.set_page_config(page_title="Clima + Notícias", layout="centered")
-st.title("🌤 Clima Atual + 📰 Notícias Locais")
+st.title("🌤 Clima Atual + 📰 Notícias Relacionadas")
 
 city = st.text_input("Digite o nome da cidade:", "São Paulo")
 
@@ -29,7 +29,6 @@ aba1, aba2 = st.tabs(["Clima", "Notícias"])
 with aba1:
     with st.spinner("Buscando clima..."):
         weather_data = get_weather(city)
-
     if weather_data:
         st.subheader("☁️ Clima Atual")
         st.write(f"**Cidade:** {weather_data['name']}, {weather_data['sys']['country']}")
@@ -39,8 +38,7 @@ with aba1:
         st.write(f"**Vento:** {weather_data['wind']['speed']} m/s")
     else:
         st.error("Cidade não encontrada ou erro na API de clima.")
-with aba2:
-  
+with aba2: 
     with st.spinner("Buscando notícias..."):
         news_articles = get_news(city)
 
