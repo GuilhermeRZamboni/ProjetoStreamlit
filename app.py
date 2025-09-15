@@ -6,7 +6,7 @@ OPENWEATHER_API_KEY = "d56b07f5053f9bcf3be82a4df9f6cbf6"
 NEWS_API_KEY = "6eb8d82ad76a4331837ccc182c2fe6ab"
 
 st.set_page_config(page_title="Clima + Notícias", layout="centered")
-st.title("🌤 Clima Atual + 📰 Notícias Relacionadas")
+st.title("🌤 Clima Atual + 📰 Notícias Locais")
 
 city = st.text_input("Digite o nome da cidade:", "São Paulo")
 
