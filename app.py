@@ -2,100 +2,114 @@ import streamlit as st
 import requests
 import datetime
 import matplotlib.pyplot as plt
+import pandas as pd
 
 # ==== CHAVES DE API ====
-OPENWEATHER_API_KEY = "d56b07f5053f9bcf3be82a4df9f6cbf6"
-NEWS_API_KEY = "6eb8d82ad76a4331837ccc182c2fe6ab"
+CHAVE_CLIMA = "d56b07f5053f9bcf3be82a4df9f6cbf6"
+CHAVE_NOTICIAS = "6eb8d82ad76a4331837ccc182c2fe6ab"
 
-# ==== CONFIG STREAMLIT ====
+# ==== CONFIGURAÇÃO STREAMLIT ====
 st.set_page_config(page_title="Clima + Notícias", layout="centered")
 st.title("🌤 Clima Atual + 📰 Notícias Locais")
 
+# ==== FUNÇÕES ====
+def buscar_clima(cidade, unidade):
+    url = f"http://api.openweathermap.org/data/2.5/weather?q={cidade}&appid={CHAVE_CLIMA}&units={unidade}&lang=pt"
+    resposta = requests.get(url)
+    return resposta.json() if resposta.status_code == 200 else None
 
-def get_weather(city_name):
-    url = f"http://api.openweathermap.org/data/2.5/weather?q={city_name}&appid={OPENWEATHER_API_KEY}&units={unidade}&lang=pt"
-    response = requests.get(url)
-    return response.json() if response.status_code == 200 else None
+def buscar_previsao(cidade, unidade):
+    url = f"http://api.openweathermap.org/data/2.5/forecast?q={cidade}&appid={CHAVE_CLIMA}&units={unidade}&lang=pt"
+    resposta = requests.get(url)
+    return resposta.json() if resposta.status_code == 200 else None
 
-def get_forecast(city_name):
-    url = f"http://api.openweathermap.org/data/2.5/forecast?q={city_name}&appid={OPENWEATHER_API_KEY}&units={unidade}&lang=pt"
-    response = requests.get(url)
-    return response.json() if response.status_code == 200 else None
+def buscar_noticias(termo):
+    url = f"https://newsapi.org/v2/everything?q={termo}&apiKey={CHAVE_NOTICIAS}&language=pt&pageSize=5"
+    resposta = requests.get(url)
+    return resposta.json().get("articles", []) if resposta.status_code == 200 else []
 
-def get_news(query):
-    url = f"https://newsapi.org/v2/everything?q={query}&apiKey={NEWS_API_KEY}&language=pt&pageSize=5"
-    response = requests.get(url)
-    return response.json().get("articles", []) if response.status_code == 200 else []
-
-def format_time(timestamp):
+def formatar_hora(timestamp):
     return datetime.datetime.fromtimestamp(timestamp).strftime("%H:%M")
 
 # ==== INTERFACE ====
-aba1, aba2 = st.tabs(["Clima", "Notícias"])
+aba_clima, aba_noticias = st.tabs(["Clima", "Notícias"])
 
-with aba1:
-    st.sidebar.header("⚙️ Configurações")
-    cidade = st.sidebar.text_input("Digite o nome da cidade:", "São Paulo")
-    unidade = st.sidebar.radio("Unidade de temperatura:", ("Graus Celcius", "Grau Fahrenheit"))
-    simbolo_unidade = "°C" if unidade == "Graus Celcius" else "°F"
-    if unidade == "Graus Celcius":
-        unidade = "metric"
-    else:
-        unidade="Imperial"
+with aba_clima:
+    cidade = st.text_input("Digite o nome da cidade:", "São Paulo")
+
+    # Unidade antes de chamar API
+    escolha_unidade = st.radio("Unidade de temperatura:", ("Celsius", "Fahrenheit"))
+    simbolo_unidade = "°C" if escolha_unidade == "Celsius" else "°F"
+    unidade = "metric" if escolha_unidade == "Celsius" else "imperial"
+
     with st.spinner("Buscando clima..."):
-        weather_data = get_weather(cidade)
-        forecast_data = get_forecast(cidade)
+        dados_clima = buscar_clima(cidade, unidade)
+        dados_previsao = buscar_previsao(cidade, unidade)
 
-    if weather_data:
+    if dados_clima:
         st.subheader("☁️ Clima Atual")
-        
+
         # Ícone do clima
-        icon = weather_data['weather'][0]['icon']
-        icon_url = f"http://openweathermap.org/img/wn/{icon}@2x.png"
-        st.image(icon_url, width=100)
+        icone = dados_clima['weather'][0]['icon']
+        icone_url = f"http://openweathermap.org/img/wn/{icone}@2x.png"
+        st.image(icone_url, width=100)
 
-        # Informações principais
-        st.write(f"**Cidade:** {weather_data['name']}, {weather_data['sys']['country']}")
-        st.write(f"**Temperatura:** {weather_data['main']['temp']}{simbolo_unidade}")
-        st.write(f"**Sensação térmica:** {weather_data['main']['feels_like']}{simbolo_unidade}")
-        st.write(f"**Clima:** {weather_data['weather'][0]['description'].capitalize()}")
-        st.write(f"**Umidade:** {weather_data['main']['humidity']}%")
-        st.write(f"**Pressão:** {weather_data['main']['pressure']} hPa")
-        st.write(f"**Vento:** {weather_data['wind']['speed']} m/s")
-        st.write(f"**Nascer do sol:** {format_time(weather_data['sys']['sunrise'])} ⛅")
-        st.write(f"**Pôr do sol:** {format_time(weather_data['sys']['sunset'])} 🌇")
+        # Detalhes do clima
+        st.write(f"**Cidade:** {dados_clima['name']}, {dados_clima['sys']['country']}")
+        st.write(f"**Temperatura:** {dados_clima['main']['temp']}{simbolo_unidade}")
+        st.write(f"**Sensação térmica:** {dados_clima['main']['feels_like']}{simbolo_unidade}")
+        st.write(f"**Condição:** {dados_clima['weather'][0]['description'].capitalize()}")
+        st.write(f"**Umidade:** {dados_clima['main']['humidity']}%")
+        st.write(f"**Pressão:** {dados_clima['main']['pressure']} hPa")
+        st.write(f"**Vento:** {dados_clima['wind']['speed']} m/s")
+        st.write(f"**Nascer do sol:** {formatar_hora(dados_clima['sys']['sunrise'])} ⛅")
+        st.write(f"**Pôr do sol:** {formatar_hora(dados_clima['sys']['sunset'])} 🌇")
 
-        # Previsão 5 dias (gráfico)
-        if forecast_data:
-            st.subheader("📊 Previsão para os próximos dias")
-            temps, dates = [], []
-            for item in forecast_data["list"][::8]:  # Pega 1 previsão por dia (a cada 8 registros de 3h)
-                temps.append(item["main"]["temp"])
-                dates.append(item["dt_txt"].split(" ")[0])
+    # Previsão de 5 dias (mínimas e máximas)
+    if dados_previsao:
+        st.subheader("📊 Previsão para os próximos 5 dias")
 
-            fig, ax = plt.subplots()
-            ax.plot(dates, temps, marker="o")
-            ax.set_title("Temperatura nos próximos dias")
-            ax.set_ylabel(f"Temperatura ({simbolo_unidade})")
-            ax.set_xlabel("Data")
-            st.pyplot(fig)
+        previsao_lista = dados_previsao["list"]
+        df = pd.DataFrame([
+            {
+                "data": item["dt_txt"].split(" ")[0],
+                "temp": item["main"]["temp"]
+            }
+            for item in previsao_lista
+        ])
 
+        diario = df.groupby("data").agg({"temp": ["min", "max"]}).reset_index()
+        diario.columns = ["Data", "Mínima", "Máxima"]
+
+        # Mostrar tabela
+        st.dataframe(diario.set_index("Data"))
+
+        # Gráfico min vs max
+        fig, ax = plt.subplots()
+        ax.plot(diario["Data"], diario["Máxima"], marker="o", label="Máxima", color="red")
+        ax.plot(diario["Data"], diario["Mínima"], marker="o", label="Mínima", color="blue")
+        ax.set_title("Temperaturas máximas e mínimas")
+        ax.set_ylabel(f"Temperatura ({simbolo_unidade})")
+        ax.set_xlabel("Data")
+        ax.legend()
+        st.pyplot(fig)
     else:
         st.error("Cidade não encontrada ou erro na API de clima.")
 
-with aba2: 
-    pesquisa = st.chat_input("Olá, oque você deseja pesquisar?")
-    with st.spinner("Buscando notícias..."):
-        news_articles = get_news(pesquisa)
+with aba_noticias:
+    termo_pesquisa = st.chat_input("Digite o termo para pesquisar notícias:")
+    if termo_pesquisa:
+        with st.spinner("Buscando notícias..."):
+            artigos = buscar_noticias(termo_pesquisa)
 
-    if news_articles:
-        st.subheader("📰 Notícias Relacionadas")
-        for article in news_articles:
-            if article.get("urlToImage"):
-                st.image(article["urlToImage"], use_column_width=True)
-            st.markdown(f"### [{article['title']}]({article['url']})")
-            st.write(article.get("description", ""))
-            st.caption(f"Fonte: {article['source']['name']} | Publicado em: {article['publishedAt'][:10]}")
-            st.markdown("---")
-    else:
-        st.warning("Nenhuma notícia encontrada para esta cidade.")
+        if artigos:
+            st.subheader("📰 Notícias Relacionadas")
+            for artigo in artigos:
+                if artigo.get("urlToImage"):
+                    st.image(artigo["urlToImage"], use_container_width=True)
+                st.markdown(f"### [{artigo['title']}]({artigo['url']})")
+                st.write(artigo.get("description", ""))
+                st.caption(f"Fonte: {artigo['source']['name']} | Publicado em: {artigo['publishedAt'][:10]}")
+                st.markdown("---")
+        else:
+            st.warning("Nenhuma notícia encontrada para essa pesquisa.")
