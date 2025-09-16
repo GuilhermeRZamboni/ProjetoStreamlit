@@ -8,7 +8,7 @@ CHAVE_CLIMA = "d56b07f5053f9bcf3be82a4df9f6cbf6"
 CHAVE_NOTICIAS = "6eb8d82ad76a4331837ccc182c2fe6ab"
 
 st.set_page_config(page_title="Clima + Notícias", layout="centered")
-st.title("🌤 Clima Atual + 📰 Notícias Locais")
+st.title("🌤 Clima Atual + 📰 Notícias")
 
 def buscar_clima(cidade, unidade):
     url = f"http://api.openweathermap.org/data/2.5/weather?q={cidade}&appid={CHAVE_CLIMA}&units={unidade}&lang=pt"
@@ -84,10 +84,10 @@ with aba_clima:
         ax.legend()
         st.pyplot(fig)
     else:
-        st.error("Cidade não encontrada ou erro na API de clima.")
+        st.error("Cidade não encontrada ou erro na API de clima")
 
 with aba_noticias:
-    termo_pesquisa = st.chat_input("Digite o termo para pesquisar notícias:")
+    termo_pesquisa = st.chat_input("Digite o assunto para pesquisar notícias:")
     if termo_pesquisa:
         with st.spinner("Buscando notícias..."):
             artigos = buscar_noticias(termo_pesquisa)
